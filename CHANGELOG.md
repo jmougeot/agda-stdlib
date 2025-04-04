@@ -123,7 +123,9 @@ New modules
 
 * `Data.Sign.Show` to show a sign
 
-* `AlgebraPropreties.Semigroup.Reasoning` adding reasoning combinators for semigroups
+* `Algebra.Propreties.Semigroup.Reasoning` adding reasoning combinators for semigroups
+
+* `Algebra.Propreties.Monoid.Reasoning` adding reasoning combinators for monoids
 
 Additions to existing modules
 -----------------------------
