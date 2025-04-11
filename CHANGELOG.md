@@ -123,7 +123,15 @@ New modules
 
 * `Data.Sign.Show` to show a sign
 
+<<<<<<< HEAD
 * `Algebra.Properties.Semigroup` adding consequences for associtvity for semigroups
+=======
+* `Algebra.Propreties.Semigroup.Reasoning` adding reasoning combinators for semigroups
+
+* `Algebra.Propreties.Monoid.Reasoning` adding reasoning combinators for monoids
+
+Additions to existing modules
+>>>>>>> e149b4b39 (move from Reasoning to Propreties)
 -----------------------------
 
 * In `Algebra.Construct.Pointwise`:
