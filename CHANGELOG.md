@@ -113,6 +113,8 @@ Deprecated names
 New modules
 -----------
 
+* `Algebra.Properties.Monoid` adding consequences for identity for monoids
+
 * `Data.List.Base.{and|or|any|all}` have been lifted out into `Data.Bool.ListAction`.
 
 * `Data.List.Base.{sum|product}` and their properties have been lifted out into `Data.Nat.ListAction` and `Data.Nat.ListAction.Properties`.
@@ -123,8 +125,10 @@ New modules
 
 * `Data.Sign.Show` to show a sign
 
-* `Algebra.Properties.Semigroup` adding consequences for associatvity for semigroups
+Additions to existing modules
 -----------------------------
+
+* In `Algebra.Properties.Semigroup` adding consequences for associativity for semigroups
 
 * In `Algebra.Construct.Pointwise`:
   ```agda
