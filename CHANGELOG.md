@@ -113,8 +113,6 @@ Deprecated names
 New modules
 -----------
 
-* `Algebra.Properties.Monoid` adding consequences for identity for monoids
-
 * `Data.List.Base.{and|or|any|all}` have been lifted out into `Data.Bool.ListAction`.
 
 * `Data.List.Base.{sum|product}` and their properties have been lifted out into `Data.Nat.ListAction` and `Data.Nat.ListAction.Properties`.
