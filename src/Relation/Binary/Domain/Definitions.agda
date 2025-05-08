@@ -1,6 +1,7 @@
 module Relation.Binary.Domain.Definitions where
 
 open import Relation.Binary.Bundles using (Poset)
+open import Relation.Binary.Core using (Rel)
 open import Level using (Level; _⊔_; suc; Lift; lift; lower)
 open import Function using (_∘_; id)
 open import Data.Product using (∃-syntax; _×_; _,_; proj₁; proj₂)
@@ -9,35 +10,39 @@ open import Relation.Binary.PropositionalEquality using (_≡_)
 open import Relation.Binary.Reasoning.PartialOrder
 open import Data.Bool using (Bool; true; false; if_then_else_)
 open import Relation.Binary.Morphism.Structures
+open import Relation.Binary.Morphism.Structures using (IsOrderHomomorphism)
+open import Data.Nat.Properties using (≤-trans)
 
 private variable
-  o ℓ ℓ' ℓ₂ : Level
+  o ℓ e o' ℓ' e' ℓ₂ : Level
   Ix A B : Set o
+
+module _ where 
+  IsMonotone : (P : Poset o ℓ e) → (Q : Poset o' ℓ' e') → (f : Poset.Carrier P → Poset.Carrier Q) → Set (o ⊔ ℓ ⊔ e ⊔ ℓ' ⊔ e')
+  IsMonotone P Q f = IsOrderHomomorphism (Poset._≈_ P) (Poset._≈_ Q) (Poset._≤_ P) (Poset._≤_ Q) f
 
 module _ {c ℓ₁ ℓ₂ : Level} (P : Poset c ℓ₁ ℓ₂) where
   open Poset P
 
-  module PartialOrderReasoning = Relation.Binary.Reasoning.PartialOrder P
+  IsSemidirectedFamily : ∀ {Ix : Set c} → (s : Ix → Carrier) → Set _
+  IsSemidirectedFamily s = ∀ i j → ∃[ k ] (s i ≤ s k × s j ≤ s k)
 
-  is-semidirected-family : ∀ {Ix : Set c} → (f : Ix → Carrier) → Set _
-  is-semidirected-family f = ∀ i j → ∃[ k ] (f i ≤ f k × f j ≤ f k)
-
-  record is-directed-family {Ix : Set c} (f : Ix → Carrier) : Set (c ⊔ ℓ₁ ⊔ ℓ₂) where
+  record IsDirectedFamily {Ix : Set c} (s : Ix → Carrier) : Set (c ⊔ ℓ₁ ⊔ ℓ₂) where
     no-eta-equality
     field
       elt : Ix
-      semidirected : is-semidirected-family f
+      SemiDirected : IsSemidirectedFamily s
 
-  record is-dcpo : Set (suc (c ⊔ ℓ₁ ⊔ ℓ₂)) where
+  record IsDCPO : Set (suc (c ⊔ ℓ₁ ⊔ ℓ₂)) where
     field
-      has-directed-lub : ∀ {Ix : Set c} {f : Ix → Carrier}
-        → is-directed-family f
-        → ∃[ lub ] ((∀ i → f i ≤ lub) × ∀ y → (∀ i → f i ≤ y) → lub ≤ y)
+      HasDirectedLub : ∀ {Ix : Set c} {s : Ix → Carrier}
+        → IsDirectedFamily s
+        → ∃[ lub ] ((∀ i → s i ≤ lub) × ∀ y → (∀ i → s i ≤ y) → lub ≤ y)
 
-  record DCPO : Set (suc (c ⊔ ℓ₁ ⊔ ℓ₂)) where
-    field
-      poset    : Poset c ℓ₁ ℓ₂
-      dcpo-str : is-dcpo
+record DCPO (c ℓ₁ ℓ₂ : Level) : Set (suc (c ⊔ ℓ₁ ⊔ ℓ₂)) where
+  field
+    poset    : Poset c ℓ₁ ℓ₂
+    DcpoStr  : IsDCPO poset
 
 module _ {c ℓ₁ ℓ₂ : Level} {P : Poset c ℓ₁ ℓ₂} {Q : Poset c ℓ₁ ℓ₂} where
   
@@ -45,84 +50,115 @@ module _ {c ℓ₁ ℓ₂ : Level} {P : Poset c ℓ₁ ℓ₂} {Q : Poset c ℓ�
     module P = Poset P
     module Q = Poset Q
   
-  open IsOrderHomomorphism {_≈₁_ = P._≈_} {_≈₂_ = Q._≈_} {_≲₁_ = P._≤_} {_≲₂_ = Q._≤_}
-
-  record is-scott-continuous (f : P.Carrier → Q.Carrier) : Set (suc (c ⊔ ℓ₁ ⊔ ℓ₂)) where
+  record IsScottContinuous (f : P.Carrier → Q.Carrier) : Set (suc (c ⊔ ℓ₁ ⊔ ℓ₂)) where
     field
-      preserve-lub : ∀ {Ix : Set c} {g : Ix → P.Carrier}
-        → (df : is-directed-family P g)
-        → (dlub : ∃[ lub ] ((∀ i → g i P.≤ lub) × ∀ y → (∀ i → g i P.≤ y) → lub P.≤ y))
-        → ∃[ qlub ] ((∀ i → f (g i) Q.≤ qlub) × ∀ y → (∀ i → f (g i) Q.≤ y) → qlub Q.≤ y)
+      PreserveLub : ∀ {Ix : Set c} {s : Ix → P.Carrier}
+        → (dir-s : IsDirectedFamily P s)
+        → ∀ lub → ((∀ i → s i P.≤ lub) × ∀ y → (∀ i → s i P.≤ y) → lub P.≤ y)
+        → ((∀ i → f (s i) Q.≤ f lub) × ∀ y → (∀ i → f (s i) Q.≤ y) → f lub Q.≤ y)
+      PreserveEquality : ∀ {x y} → x P.≈ y → f x Q.≈ f y
 
-  dcpo+scott→monotone : (P-dcpo : is-dcpo P)
+  dcpo+scott→monotone : (P-dcpo : IsDCPO P)
     → (f : P.Carrier → Q.Carrier)
-    → (scott : is-scott-continuous f)
-    → ∀ {x y} → x P.≤ y → f x Q.≤ f y  
-  dcpo+scott→monotone P-dcpo f scott {x} {y} p =
-    -- f x ≤ f y follows by considering the directed family {x, y} and applying Scott-continuity.
-    Q.trans (proj₁ (proj₂ f-lub) (lift true)) (Q.reflexive ( fy-is-lub ))
+    → (scott : IsScottContinuous f)
+    → IsMonotone P Q f
+  dcpo+scott→monotone P-dcpo f scott = record
+    { cong = λ {x} {y} x≈y → IsScottContinuous.PreserveEquality scott x≈y
+    ; mono = λ {x} {y} x≤y → mono-proof x y x≤y
+    }
     where
-      -- The directed family indexed by Lift c Bool: s (lift true) = x, s (lift false) = y
-      s : Lift c Bool → P.Carrier
-      s (lift b) = if b then x else y
+      mono-proof : ∀ x y → x P.≤ y → f x Q.≤ f y
+      mono-proof x y x≤y = proj₁ fs-lub (lift true)
+        where
+          s : Lift c Bool → P.Carrier 
+          s (lift b) = if b then x else y
 
-      -- For any index k, s k ≤ s (lift false) (i.e., x ≤ y and y ≤ y)
-      sx≤sfalse : ∀ k → s k P.≤ s (lift false)
-      sx≤sfalse k with lower k
-      ... | true  = p
-      ... | false = P.refl
+          sx≤sfalse : ∀ b → s b P.≤ s (lift false)
+          sx≤sfalse (lift true) = x≤y
+          sx≤sfalse (lift false) = P.refl
 
-      -- s is a directed family: both elements are below y
-      s-directed : is-directed-family P s
-      s-directed = record
-        { elt = lift false ; semidirected = λ i j → lift false , (sx≤sfalse i , sx≤sfalse j)}
+          s-directed : IsDirectedFamily P s
+          s-directed = record 
+            { elt = lift true 
+            ; SemiDirected = λ i j → (lift false , sx≤sfalse i , sx≤sfalse j)
+            }
 
-      -- The least upper bound of s is y
-      lub = is-dcpo.has-directed-lub P-dcpo s-directed
+          s-lub : P.Carrier × ((∀ i → s i P.≤ y) × (∀ z → (∀ i → s i P.≤ z) → y P.≤ z))
+          s-lub = y , (sx≤sfalse , λ z lt → lt (lift false))
 
-      -- For any i, s i P.≤ y
-      h′ : ∀ i → s i P.≤ y
-      h′ i with lower i
-      ... | true  = p
-      ... | false = P.refl
+          fs-lub = IsScottContinuous.PreserveLub scott
+                    s-directed y (sx≤sfalse , λ z lt → lt (lift false))
 
-      -- y is the least upper bound of s (in the poset sense)
-      y-is-lub : proj₁ lub P.≈ y
-      y-is-lub = P.antisym
-        (proj₂ (proj₂ lub) y (λ i → h′ i))
-        (proj₁ (proj₂ lub) (lift false))
+  monotone∘directed : ∀ {Ix : Set c} {s : Ix → P.Carrier}
+    → (f : P.Carrier → Q.Carrier)
+    → IsMonotone P Q f
+    → IsDirectedFamily P s
+    → IsDirectedFamily Q (f ∘ s)
+  monotone∘directed f ismonotone dir = record 
+    { elt = IsDirectedFamily.elt dir
+    ; SemiDirected = λ i j →
+        let (k , s[i]≤s[k] , s[j]≤s[k]) = IsDirectedFamily.SemiDirected dir i j
+        in k , IsOrderHomomorphism.mono ismonotone s[i]≤s[k] , IsOrderHomomorphism.mono ismonotone s[j]≤s[k]
+    }
 
-      -- f preserves the lub, so f-lub is the lub of the image family
-      f-lub = is-scott-continuous.preserve-lub scott s-directed lub
+module _ where
 
-      -- f y is the least upper bound of the image family (in the codomain poset)
-      fy-is-lub : proj₁ f-lub Q.≈ f y
-      fy-is-lub = {!   !} 
-
-
--- module _ where
---   open import Relation.Binary.Bundles using (Poset)
---   open import Function using (_∘_)
-
---   private
---     module P {o ℓ₁ ℓ₂} (P : Poset o ℓ₁ ℓ₂) = Poset P
---     module Q {o ℓ₁ ℓ₂} (Q : Poset o ℓ₁ ℓ₂) = Poset Q
---     module R {o ℓ₁ ℓ₂} (R : Poset o ℓ₁ ℓ₂) = Poset R
-
---   scott-id : ∀ {o ℓ₁ ℓ₂} {P : Poset o ℓ₁ ℓ₂} → is-scott-continuous {P = P} {Q = P} id
---   -- scott-id : ∀ {o ℓ₁ ℓ₂} {P : Poset o ℓ₁ ℓ₂} → is-scott-continuous (id {A = Poset.Carrier P})
---   scott-id = record
---     { monotone = record { monotone = λ {x} {y} p → p }
---     ; preserve-lub = λ {Ix} {g} df dlub → dlub
---     }
+  ScottId : ∀ {c ℓ₁ ℓ₂} {P : Poset c ℓ₁ ℓ₂} → IsScottContinuous {P = P} {Q = P} id 
+  ScottId = record
+    { PreserveLub = λ dir-s lub z → z
+    ; PreserveEquality = λ z → z }
   
--- scott-∘
---     : ∀ {o ℓ₁ ℓ₂} {P Q R : Poset o ℓ₁ ℓ₂}
---     → (f : Q.Carrier Q → R.Carrier R) (g : P.Carrier P → Q.Carrier Q)
---     → is-scott-continuous f → is-scott-continuous g
---     → is-scott-continuous (f ∘ g)
---   scott-∘ {P = P} {Q} {R} f g f-scott g-scott s dir x lub =
---     f-scott (g ∘ s) 
---       (monotone∘directed g (is-scott-continuous.monotone g-scott) dir)
---       (g x)
---       (g-scott s dir x lub)
+  scott-∘ : ∀ {c ℓ₁ ℓ₂} {P Q R : Poset c ℓ₁ ℓ₂}
+    → (f : Poset.Carrier R → Poset.Carrier Q) (g : Poset.Carrier P → Poset.Carrier R)
+    → IsScottContinuous {P = R} {Q = Q} f → IsScottContinuous {P = P} {Q = R} g
+    → IsMonotone R Q f → IsMonotone P R g
+    → IsScottContinuous {P = P} {Q = Q} (f ∘ g)
+  scott-∘ f g scottf scottg monotonef monotoneg = record 
+    { PreserveLub = λ dir-s lub z →  IsScottContinuous.PreserveLub scottf 
+    (monotone∘directed g monotoneg dir-s)  
+    (g lub) ( IsScottContinuous.PreserveLub scottg dir-s lub z)
+    ; PreserveEquality = λ {x} {y} z → IsScottContinuous.PreserveEquality scottf 
+    (IsScottContinuous.PreserveEquality scottg z)
+    }
+
+-- Module for the DCPO record
+module _ {c ℓ₁ ℓ₂} (D : DCPO c ℓ₁ ℓ₂) where
+  open DCPO D public
+
+  posetD : Poset c ℓ₁ ℓ₂
+  posetD = poset
+
+  open Poset posetD
+  open import Relation.Binary.Reasoning.PartialOrder posetD public
+
+  dcpoD : IsDCPO posetD
+  dcpoD = DcpoStr
+
+  ⋃ : ∀ {Ix : Set c} (s : Ix → Carrier) → (dir : IsDirectedFamily posetD s) → Carrier
+  ⋃ s dir = proj₁ (IsDCPO.HasDirectedLub dcpoD dir)
+
+  module ⋃ {Ix : Set c} (s : Ix → Carrier) (dir : IsDirectedFamily posetD s) where
+    fam≤lub : ∀ ix → s ix ≤ ⋃ s dir
+    fam≤lub ix = proj₁ (proj₂ (IsDCPO.HasDirectedLub dcpoD dir)) ix
+    
+    least : ∀ ub → (∀ ix → s ix ≤ ub) → ⋃ s dir ≤ ub
+    least ub p = proj₂ (proj₂ (IsDCPO.HasDirectedLub dcpoD dir)) ub p
+
+  ⋃-pointwise : ∀ {Ix} {s s' : Ix → Carrier}
+    → {fam : IsDirectedFamily posetD s} {fam' : IsDirectedFamily posetD s'}
+    → (∀ ix → s ix ≤ s' ix)
+    → ⋃ s fam ≤ ⋃ s' fam'
+  ⋃-pointwise {s = s} {s'} {fam} {fam'} p = ⋃.least s fam (⋃ s' fam') λ ix →
+    trans (p ix) (⋃.fam≤lub s' fam' ix)
+
+module Scott {c} {ℓ₁} {ℓ₂} {D E : DCPO c ℓ₁ ℓ₂}
+             (f : Poset.Carrier (DCPO.poset D) → Poset.Carrier (DCPO.poset E))
+             (mono : IsMonotone (DCPO.poset D) (DCPO.poset E) f) where``
+
+  private
+    module D = DCPO D
+    module E = DCPO E
+
+  pres-directed-lub : ∀ {Ix} (s : Ix → Carrier) → is-directed-family D.poset s
+      → ∀ x → is-lub (D .fst) s x → is-lub (E .fst) (apply f ⊙ s) (f · x)
+
