@@ -33,16 +33,42 @@ module _ {c ℓ₁ ℓ₂ : Level} (P : Poset c ℓ₁ ℓ₂) where
       elt : Ix
       SemiDirected : IsSemidirectedFamily s
 
+  record IsLub {Ix : Set c} (s : Ix → Carrier) (lub : Carrier) : Set (c ⊔ ℓ₁ ⊔ ℓ₂) where
+    field
+      is-upperbound : ∀ i → s i ≤ lub
+      is-least : ∀ y → (∀ i → s i ≤ y) → lub ≤ y
+  
+  record Lub {Ix : Set c} (s : Ix → Carrier)  : Set (c ⊔ ℓ₁ ⊔ ℓ₂) where
+    constructor mkLub
+    field
+      lub : Carrier
+      is-upperbound : ∀ i → s i ≤ lub
+      is-least : ∀ y → (∀ i → s i ≤ y) → lub ≤ y
+
   record IsDCPO : Set (suc (c ⊔ ℓ₁ ⊔ ℓ₂)) where
     field
-      HasDirectedLub : ∀ {Ix : Set c} {s : Ix → Carrier}
+      ⋁ : ∀ {Ix : Set c} 
+        → (s : Ix → Carrier)
         → IsDirectedFamily s
-        → ∃[ lub ] ((∀ i → s i ≤ lub) × ∀ y → (∀ i → s i ≤ y) → lub ≤ y)
+        → Carrier
+      ⋁-isLub : ∀ {Ix : Set c} 
+        → (s : Ix → Carrier)
+        → (dir : IsDirectedFamily s)
+        → IsLub s (⋁ s dir)
+
+    module _ {Ix : Set c} {s : Ix → Carrier} {dir : IsDirectedFamily s} where
+      open IsLub (⋁-isLub s dir)
+        renaming (is-upperbound to ⋁-≤; is-least to ⋁-least)
+        public
+       
 
 record DCPO (c ℓ₁ ℓ₂ : Level) : Set (suc (c ⊔ ℓ₁ ⊔ ℓ₂)) where
   field
     poset    : Poset c ℓ₁ ℓ₂
     DcpoStr  : IsDCPO poset
+
+  open Poset poset public
+  open IsDCPO DcpoStr public
 
 module _ {c ℓ₁ ℓ₂ : Level} {P : Poset c ℓ₁ ℓ₂} {Q : Poset c ℓ₁ ℓ₂} where
   
@@ -54,8 +80,9 @@ module _ {c ℓ₁ ℓ₂ : Level} {P : Poset c ℓ₁ ℓ₂} {Q : Poset c ℓ�
     field
       PreserveLub : ∀ {Ix : Set c} {s : Ix → P.Carrier}
         → (dir-s : IsDirectedFamily P s)
-        → ∀ lub → ((∀ i → s i P.≤ lub) × ∀ y → (∀ i → s i P.≤ y) → lub P.≤ y)
-        → ((∀ i → f (s i) Q.≤ f lub) × ∀ y → (∀ i → f (s i) Q.≤ y) → f lub Q.≤ y)
+        → (lub : P.Carrier)
+        → IsLub P s lub
+        → IsLub Q (f ∘ s) (f lub)
       PreserveEquality : ∀ {x y} → x P.≈ y → f x Q.≈ f y
 
   dcpo+scott→monotone : (P-dcpo : IsDCPO P)
@@ -68,7 +95,7 @@ module _ {c ℓ₁ ℓ₂ : Level} {P : Poset c ℓ₁ ℓ₂} {Q : Poset c ℓ�
     }
     where
       mono-proof : ∀ x y → x P.≤ y → f x Q.≤ f y
-      mono-proof x y x≤y = proj₁ fs-lub (lift true)
+      mono-proof x y x≤y = IsLub.is-upperbound fs-lub (lift true)
         where
           s : Lift c Bool → P.Carrier 
           s (lift b) = if b then x else y
@@ -82,12 +109,16 @@ module _ {c ℓ₁ ℓ₂ : Level} {P : Poset c ℓ₁ ℓ₂} {Q : Poset c ℓ�
             { elt = lift true 
             ; SemiDirected = λ i j → (lift false , sx≤sfalse i , sx≤sfalse j)
             }
+          
+          s-lub : IsLub P s y
+          s-lub = record
+            { is-upperbound = sx≤sfalse
+            ; is-least = λ z proof → proof (lift false)
+            }
+          
+          fs-lub : IsLub Q (f ∘ s) (f y)
+          fs-lub = IsScottContinuous.PreserveLub scott s-directed y s-lub
 
-          s-lub : P.Carrier × ((∀ i → s i P.≤ y) × (∀ z → (∀ i → s i P.≤ z) → y P.≤ z))
-          s-lub = y , (sx≤sfalse , λ z lt → lt (lift false))
-
-          fs-lub = IsScottContinuous.PreserveLub scott
-                    s-directed y (sx≤sfalse , λ z lt → lt (lift false))
 
   monotone∘directed : ∀ {Ix : Set c} {s : Ix → P.Carrier}
     → (f : P.Carrier → Q.Carrier)
@@ -114,51 +145,61 @@ module _ where
     → IsMonotone R Q f → IsMonotone P R g
     → IsScottContinuous {P = P} {Q = Q} (f ∘ g)
   scott-∘ f g scottf scottg monotonef monotoneg = record 
-    { PreserveLub = λ dir-s lub z →  IsScottContinuous.PreserveLub scottf 
-    (monotone∘directed g monotoneg dir-s)  
-    (g lub) ( IsScottContinuous.PreserveLub scottg dir-s lub z)
-    ; PreserveEquality = λ {x} {y} z → IsScottContinuous.PreserveEquality scottf 
-    (IsScottContinuous.PreserveEquality scottg z)
+    { PreserveLub = λ dir-s lub z → f.PreserveLub 
+        (monotone∘directed g monotoneg dir-s)  
+        (g lub) 
+        (g.PreserveLub dir-s lub z)
+    ; PreserveEquality = λ {x} {y} z → 
+      f.PreserveEquality (g.PreserveEquality z)
     }
+    where 
+      module f = IsScottContinuous scottf
+      module g = IsScottContinuous scottg
 
--- Module for the DCPO record
-module _ {c ℓ₁ ℓ₂} (D : DCPO c ℓ₁ ℓ₂) where
-  open DCPO D public
+module _ {c ℓ₁ ℓ₂} (D : DCPO c ℓ₁ ℓ₂) (let module D = DCPO D) where
+  open DCPO D
 
-  posetD : Poset c ℓ₁ ℓ₂
-  posetD = poset
-
-  open Poset posetD
-  open import Relation.Binary.Reasoning.PartialOrder posetD public
-
-  dcpoD : IsDCPO posetD
-  dcpoD = DcpoStr
-
-  ⋃ : ∀ {Ix : Set c} (s : Ix → Carrier) → (dir : IsDirectedFamily posetD s) → Carrier
-  ⋃ s dir = proj₁ (IsDCPO.HasDirectedLub dcpoD dir)
-
-  module ⋃ {Ix : Set c} (s : Ix → Carrier) (dir : IsDirectedFamily posetD s) where
-    fam≤lub : ∀ ix → s ix ≤ ⋃ s dir
-    fam≤lub ix = proj₁ (proj₂ (IsDCPO.HasDirectedLub dcpoD dir)) ix
-    
-    least : ∀ ub → (∀ ix → s ix ≤ ub) → ⋃ s dir ≤ ub
-    least ub p = proj₂ (proj₂ (IsDCPO.HasDirectedLub dcpoD dir)) ub p
+  open import Relation.Binary.Reasoning.PartialOrder poset public
 
   ⋃-pointwise : ∀ {Ix} {s s' : Ix → Carrier}
-    → {fam : IsDirectedFamily posetD s} {fam' : IsDirectedFamily posetD s'}
+    → {fam : IsDirectedFamily poset s} {fam' : IsDirectedFamily poset s'}
     → (∀ ix → s ix ≤ s' ix)
-    → ⋃ s fam ≤ ⋃ s' fam'
-  ⋃-pointwise {s = s} {s'} {fam} {fam'} p = ⋃.least s fam (⋃ s' fam') λ ix →
-    trans (p ix) (⋃.fam≤lub s' fam' ix)
+    → ⋁ s fam ≤ ⋁ s' fam'
+  ⋃-pointwise {s = s} {s'} {fam} {fam'} p = 
+    ⋁-least (⋁ s' fam') λ i → trans (p i) (⋁-≤ i)
 
-module Scott {c} {ℓ₁} {ℓ₂} {D E : DCPO c ℓ₁ ℓ₂}
-             (f : Poset.Carrier (DCPO.poset D) → Poset.Carrier (DCPO.poset E))
-             (mono : IsMonotone (DCPO.poset D) (DCPO.poset E) f) where``
+module Scott 
+    {c ℓ₁ ℓ₂} 
+    {D E : DCPO c ℓ₁ ℓ₂}
+    (let module D = DCPO D)
+    (let module E = DCPO E)
+    (f : D.Carrier → E.Carrier)
+    (mono : IsMonotone D.poset E.poset f) where
 
+    res-directed-lub : ∀ {Ix} (s : Ix → D.Carrier)
+      → IsDirectedFamily D.poset s
+      → ∀ x → IsLub D.poset s x
+      → IsLub E.poset (f ∘ s) (f x)
+    res-directed-lub s dir x lub = {!   !}
+      
+    directed : ∀ {Ix} {s : Ix → D.Carrier} → IsDirectedFamily D.poset s → IsDirectedFamily E.poset (f ∘ s)
+    directed = monotone∘directed f mono
+    
+    pres-⋃
+      : ∀ {Ix} (s : Ix → D.Carrier) → (dir : IsDirectedFamily D.poset s)
+      → f (D.⋁ s dir) ≡ E.⋁ (f ∘ s) (monotone∘directed f mono dir)
+    pres-⋃ s dir = {!   !} 
+
+module _ {c ℓ₁ ℓ₂} (D E : DCPO c ℓ₁ ℓ₂) where
   private
     module D = DCPO D
     module E = DCPO E
 
-  pres-directed-lub : ∀ {Ix} (s : Ix → Carrier) → is-directed-family D.poset s
-      → ∀ x → is-lub (D .fst) s x → is-lub (E .fst) (apply f ⊙ s) (f · x)
+  to-scott : (f : D.Carrier → E.Carrier) → IsMonotone D.poset E.poset f  
+    → (∀ {Ix} (s : Ix → D.Carrier) (dir : IsDirectedFamily D.poset s) →
+    IsLub E.poset (f ∘ s) (f (D.⋁ s dir))) → IsScottContinuous {P = D.poset} {Q = E.poset} f 
+  to-scott f monotone pres-⋃ = {!   !} 
 
+  -- res-lub : ∀ {Ix} (s : Ix → D.Carrier) → (dir : is-directed-family D.poset s)
+  --       → ∀ x → is-lub D.poset s x → is-lub E.poset (f ⊙ s) (f x)
+  --     pres-lub s dir x x-lub .is-lub.fam≤lub i = ?  
