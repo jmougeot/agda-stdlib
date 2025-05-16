@@ -6,20 +6,8 @@
 
 module Relation.Binary.Domain.Bundles where
 
+open import Level using (Level; _⊔_; suc)
 open import Relation.Binary.Bundles using (Poset)
-open import Relation.Binary.Core using (Rel)
-open import Level using (Level; _⊔_; suc; Lift; lift; lower)
-open import Function using (_∘_; id)
-open import Data.Product using (∃-syntax; _×_; _,_; proj₁; proj₂)
-open import Relation.Unary using (Pred)
-open import Relation.Binary.PropositionalEquality using (_≡_; subst; cong)
-open import Relation.Binary.Reasoning.PartialOrder
-open import Relation.Binary.Structures
-open import Data.Bool using (Bool; true; false; if_then_else_)
-open import Relation.Binary.Morphism.Structures
-open import Relation.Binary.Morphism.Structures using (IsOrderHomomorphism)
-open import Data.Nat.Properties using (≤-trans)
-
 open import Relation.Binary.Domain.Structures
 open import Relation.Binary.Domain.Definitions
 
@@ -45,7 +33,6 @@ module _ {c ℓ₁ ℓ₂ : Level} (P : Poset c ℓ₁ ℓ₂) where
     open IsDCPO DcpoStr public
 
 module _ {c ℓ₁ ℓ₂ : Level} {P : Poset c ℓ₁ ℓ₂} {Q : Poset c ℓ₁ ℓ₂} where
-
   private
     module P = Poset P
     module Q = Poset Q

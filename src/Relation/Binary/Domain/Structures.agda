@@ -6,19 +6,11 @@
 
 module Relation.Binary.Domain.Structures where
 
-open import Relation.Binary.Bundles using (Poset)
-open import Relation.Binary.Core using (Rel)
-open import Level using (Level; _⊔_; suc; Lift; lift; lower)
-open import Function using (_∘_; id)
-open import Data.Product using (∃-syntax; _×_; _,_; proj₁; proj₂)
-open import Relation.Unary using (Pred)
-open import Relation.Binary.PropositionalEquality using (_≡_; subst; cong)
-open import Relation.Binary.Reasoning.PartialOrder
-open import Relation.Binary.Structures
-open import Data.Bool using (Bool; true; false; if_then_else_)
-open import Relation.Binary.Morphism.Structures
-open import Relation.Binary.Morphism.Structures using (IsOrderHomomorphism)
+open import Data.Product using (_×_; _,_)
 open import Data.Nat.Properties using (≤-trans)
+open import Function using (_∘_)
+open import Level using (Level; _⊔_; suc)
+open import Relation.Binary.Bundles using (Poset)
 open import Relation.Binary.Domain.Definitions
 
 private variable

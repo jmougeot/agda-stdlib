@@ -6,17 +6,10 @@
 
 module Relation.Binary.Domain.Definitions where
 
+open import Data.Product using (∃-syntax; _×_; _,_)
+open import Level using (Level; _⊔_)
 open import Relation.Binary.Bundles using (Poset)
-open import Relation.Binary.Core using (Rel)
-open import Level using (Level; _⊔_; suc; Lift; lift; lower)
-open import Function using (_∘_; id)
-open import Data.Product using (∃-syntax; _×_; _,_; proj₁; proj₂)
-open import Relation.Unary using (Pred)
-open import Relation.Binary.PropositionalEquality using (_≡_; subst; cong)
-open import Relation.Binary.Reasoning.PartialOrder
-open import Relation.Binary.Morphism.Structures
 open import Relation.Binary.Morphism.Structures using (IsOrderHomomorphism)
-open import Data.Nat.Properties using (≤-trans)
 
 private variable
   c o ℓ e o' ℓ' e' ℓ₂ : Level
@@ -29,7 +22,6 @@ module _ where
 
 module _ {c ℓ₁ ℓ₂ : Level} (P : Poset c ℓ₁ ℓ₂) where
   open Poset P
-
   IsSemidirectedFamily : ∀ {Ix : Set c} → (s : Ix → Carrier) → Set _
   IsSemidirectedFamily s = ∀ i j → ∃[ k ] (s i ≤ s k × s j ≤ s k)
 
