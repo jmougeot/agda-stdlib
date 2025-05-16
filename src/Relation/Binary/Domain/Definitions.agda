@@ -23,7 +23,7 @@ private variable
   Ix A B : Set o
   P : Poset c ℓ e
 
-module _ where 
+module _ where
   IsMonotone : (P : Poset o ℓ e) → (Q : Poset o' ℓ' e') → (f : Poset.Carrier P → Poset.Carrier Q) → Set (o ⊔ ℓ ⊔ e ⊔ ℓ' ⊔ e')
   IsMonotone P Q f = IsOrderHomomorphism (Poset._≈_ P) (Poset._≈_ Q) (Poset._≤_ P) (Poset._≤_ Q) f
 
@@ -32,4 +32,4 @@ module _ {c ℓ₁ ℓ₂ : Level} (P : Poset c ℓ₁ ℓ₂) where
 
   IsSemidirectedFamily : ∀ {Ix : Set c} → (s : Ix → Carrier) → Set _
   IsSemidirectedFamily s = ∀ i j → ∃[ k ] (s i ≤ s k × s j ≤ s k)
- 
+

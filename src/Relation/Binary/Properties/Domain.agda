@@ -174,4 +174,4 @@ module _ {c ℓ₁ ℓ₂} {P : Poset c ℓ₁ ℓ₂} {D E : DCPO P c ℓ₁ �
         (IsOrderHomomorphism.cong mono (uniqueLub {D = D} (D.⋁ _ dir) lub (D.⋁-isLub _ dir) x))
         (pres-⋁ _ dir)
     ; PreserveEquality = IsOrderHomomorphism.cong mono }
-  
+
