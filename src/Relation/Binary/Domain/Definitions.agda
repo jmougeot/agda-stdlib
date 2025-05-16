@@ -1,3 +1,9 @@
+------------------------------------------------------------------------
+-- The Agda standard library
+--
+-- Defintions for domain theory
+------------------------------------------------------------------------
+
 module Relation.Binary.Domain.Definitions where
 
 open import Relation.Binary.Bundles using (Poset)
@@ -6,8 +12,9 @@ open import Level using (Level; _⊔_; suc; Lift; lift; lower)
 open import Function using (_∘_; id)
 open import Data.Product using (∃-syntax; _×_; _,_; proj₁; proj₂)
 open import Relation.Unary using (Pred)
-open import Relation.Binary.PropositionalEquality using (_≡_)
+open import Relation.Binary.PropositionalEquality using (_≡_; subst; cong)
 open import Relation.Binary.Reasoning.PartialOrder
+open import Relation.Binary.Structures
 open import Data.Bool using (Bool; true; false; if_then_else_)
 open import Relation.Binary.Morphism.Structures
 open import Relation.Binary.Morphism.Structures using (IsOrderHomomorphism)
@@ -61,7 +68,6 @@ module _ {c ℓ₁ ℓ₂ : Level} (P : Poset c ℓ₁ ℓ₂) where
         renaming (is-upperbound to ⋁-≤; is-least to ⋁-least)
         public
        
-
 record DCPO (c ℓ₁ ℓ₂ : Level) : Set (suc (c ⊔ ℓ₁ ⊔ ℓ₂)) where
   field
     poset    : Poset c ℓ₁ ℓ₂
@@ -69,6 +75,27 @@ record DCPO (c ℓ₁ ℓ₂ : Level) : Set (suc (c ⊔ ℓ₁ ⊔ ℓ₂)) wher
 
   open Poset poset public
   open IsDCPO DcpoStr public
+
+module _ {c ℓ₁ ℓ₂} (D  : DCPO c ℓ₁ ℓ₂) where
+  private
+    module D = DCPO D
+  
+  uniqueLub : ∀ {Ix} {s : Ix → D.Carrier}
+    → (x y : D.Carrier) → IsLub D.poset s x → IsLub D.poset s y
+    →  x D.≈ y
+  uniqueLub x y x-lub y-lub = D.antisym
+    (IsLub.is-least x-lub y (IsLub.is-upperbound y-lub))
+    (IsLub.is-least y-lub x (IsLub.is-upperbound x-lub))
+
+  is-lub-cong : ∀ {Ix} {s : Ix → D.Carrier}
+    → (x y : D.Carrier) 
+    → x D.≈ y
+    → IsLub D.poset s x → IsLub D.poset s y
+  is-lub-cong x y x≈y x-lub = record
+    { is-upperbound = λ i → D.trans (IsLub.is-upperbound x-lub i) (D.reflexive x≈y)
+    ; is-least = λ z ub → D.trans (D.reflexive (D.Eq.sym x≈y)) (IsLub.is-least x-lub z (λ i → D.trans (ub i) (D.reflexive D.Eq.refl)))
+    }
+
 
 module _ {c ℓ₁ ℓ₂ : Level} {P : Poset c ℓ₁ ℓ₂} {Q : Poset c ℓ₁ ℓ₂} where
   
@@ -79,7 +106,7 @@ module _ {c ℓ₁ ℓ₂ : Level} {P : Poset c ℓ₁ ℓ₂} {Q : Poset c ℓ�
   record IsScottContinuous (f : P.Carrier → Q.Carrier) : Set (suc (c ⊔ ℓ₁ ⊔ ℓ₂)) where
     field
       PreserveLub : ∀ {Ix : Set c} {s : Ix → P.Carrier}
-        → (dir-s : IsDirectedFamily P s)
+        → (dir : IsDirectedFamily P s)
         → (lub : P.Carrier)
         → IsLub P s lub
         → IsLub Q (f ∘ s) (f lub)
@@ -136,7 +163,7 @@ module _ where
 
   ScottId : ∀ {c ℓ₁ ℓ₂} {P : Poset c ℓ₁ ℓ₂} → IsScottContinuous {P = P} {Q = P} id 
   ScottId = record
-    { PreserveLub = λ dir-s lub z → z
+    { PreserveLub = λ dir lub z → z
     ; PreserveEquality = λ z → z }
   
   scott-∘ : ∀ {c ℓ₁ ℓ₂} {P Q R : Poset c ℓ₁ ℓ₂}
@@ -144,11 +171,11 @@ module _ where
     → IsScottContinuous {P = R} {Q = Q} f → IsScottContinuous {P = P} {Q = R} g
     → IsMonotone R Q f → IsMonotone P R g
     → IsScottContinuous {P = P} {Q = Q} (f ∘ g)
-  scott-∘ f g scottf scottg monotonef monotoneg = record 
-    { PreserveLub = λ dir-s lub z → f.PreserveLub 
-        (monotone∘directed g monotoneg dir-s)  
+  scott-∘ f g scottf scottg monof monog = record 
+    { PreserveLub = λ dir lub z → f.PreserveLub 
+        (monotone∘directed g monog dir)  
         (g lub) 
-        (g.PreserveLub dir-s lub z)
+        (g.PreserveLub dir lub z)
     ; PreserveEquality = λ {x} {y} z → 
       f.PreserveEquality (g.PreserveEquality z)
     }
@@ -174,22 +201,29 @@ module Scott
     (let module D = DCPO D)
     (let module E = DCPO E)
     (f : D.Carrier → E.Carrier)
+    (isScott : IsScottContinuous {P = D.poset} {Q = E.poset} f)
     (mono : IsMonotone D.poset E.poset f) where
-
-    res-directed-lub : ∀ {Ix} (s : Ix → D.Carrier)
-      → IsDirectedFamily D.poset s
-      → ∀ x → IsLub D.poset s x
-      → IsLub E.poset (f ∘ s) (f x)
-    res-directed-lub s dir x lub = {!   !}
-      
-    directed : ∀ {Ix} {s : Ix → D.Carrier} → IsDirectedFamily D.poset s → IsDirectedFamily E.poset (f ∘ s)
-    directed = monotone∘directed f mono
     
-    pres-⋃
-      : ∀ {Ix} (s : Ix → D.Carrier) → (dir : IsDirectedFamily D.poset s)
-      → f (D.⋁ s dir) ≡ E.⋁ (f ∘ s) (monotone∘directed f mono dir)
-    pres-⋃ s dir = {!   !} 
+    open DCPO D
+    open DCPO E
 
+    pres-⋁
+      : ∀ {Ix} (s : Ix → D.Carrier) → (dir : IsDirectedFamily D.poset s)
+      → f (D.⋁ s dir) E.≈ E.⋁ (f ∘ s) (monotone∘directed f mono dir)
+    pres-⋁ s dir = E.antisym 
+      (IsLub.is-least 
+        (IsScottContinuous.PreserveLub isScott dir (D.⋁ s dir) (D.⋁-isLub s dir))
+        (E.⋁ (f ∘ s) (monotone∘directed f mono dir))
+        E.⋁-≤
+        ) 
+      (IsLub.is-least 
+        (E.⋁-isLub (f ∘ s) (monotone∘directed f mono dir))
+        (f (D.⋁ s dir))
+        (λ i → IsOrderHomomorphism.mono mono (D.⋁-≤ i))
+        )
+
+
+   
 module _ {c ℓ₁ ℓ₂} (D E : DCPO c ℓ₁ ℓ₂) where
   private
     module D = DCPO D
@@ -198,8 +232,8 @@ module _ {c ℓ₁ ℓ₂} (D E : DCPO c ℓ₁ ℓ₂) where
   to-scott : (f : D.Carrier → E.Carrier) → IsMonotone D.poset E.poset f  
     → (∀ {Ix} (s : Ix → D.Carrier) (dir : IsDirectedFamily D.poset s) →
     IsLub E.poset (f ∘ s) (f (D.⋁ s dir))) → IsScottContinuous {P = D.poset} {Q = E.poset} f 
-  to-scott f monotone pres-⋃ = {!   !} 
-
-  -- res-lub : ∀ {Ix} (s : Ix → D.Carrier) → (dir : is-directed-family D.poset s)
-  --       → ∀ x → is-lub D.poset s x → is-lub E.poset (f ⊙ s) (f x)
-  --     pres-lub s dir x x-lub .is-lub.fam≤lub i = ?  
+  to-scott f mono pres-⋁ = record 
+    { PreserveLub = λ dir lub x → is-lub-cong E (f (D.⋁ _ dir)) (f lub)
+      (IsOrderHomomorphism.cong mono (uniqueLub D (D.⋁ _ dir) lub (D.⋁-isLub _ dir) x)) 
+      (pres-⋁ _ dir)
+    ; PreserveEquality = IsOrderHomomorphism.cong mono }
