@@ -4,6 +4,8 @@
 -- Structures for domain theory
 ------------------------------------------------------------------------
 
+{-# OPTIONS --cubical-compatible --safe #-}
+
 module Relation.Binary.Domain.Structures where
 
 open import Data.Product using (_×_; _,_)

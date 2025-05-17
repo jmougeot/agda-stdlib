@@ -11,16 +11,15 @@ open import Level using (Level; Lift; lift)
 open import Function using (_∘_; id)
 open import Data.Product using (_,_)
 open import Data.Bool using (Bool; true; false; if_then_else_)
-open import Relation.Binary.Domain.Definitions
+open import Relation.Binary.Domain.Bundles using (DCPO)
+open import Relation.Binary.Domain.Definitions using (IsMonotone)
 open import Relation.Binary.Domain.Structures
-open import Relation.Binary.Domain.Bundles
+  using (IsDirectedFamily; IsDCPO; IsLub; IsScottContinuous)
 open import Relation.Binary.Morphism.Structures using (IsOrderHomomorphism)
-
 
 private variable
   c ℓ₁ ℓ₂ o ℓ : Level
   Ix A B : Set o
-
 
 module _ {c ℓ₁ ℓ₂} {P : Poset c ℓ₁ ℓ₂} {D : DCPO P c ℓ₁ ℓ₂ } where
   private
