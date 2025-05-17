@@ -4,6 +4,8 @@
 -- Defintions for domain theory
 ------------------------------------------------------------------------
 
+{-# OPTIONS --cubical-compatible --safe #-}
+
 module Relation.Binary.Properties.Domain where
 
 open import Relation.Binary.Bundles using (Poset)
@@ -21,7 +23,7 @@ private variable
   c ℓ₁ ℓ₂ o ℓ : Level
   Ix A B : Set o
 
-module _ {c ℓ₁ ℓ₂} {P : Poset c ℓ₁ ℓ₂} {D : DCPO P c ℓ₁ ℓ₂ } where
+module _ {c ℓ₁ ℓ₂} {P : Poset c ℓ₁ ℓ₂} {D : DCPO c ℓ₁ ℓ₂ } where
   private
     module D = DCPO D
 
@@ -118,7 +120,7 @@ module _ where
       module f = IsScottContinuous scottf
       module g = IsScottContinuous scottg
 
-module _ {c ℓ₁ ℓ₂} {P : Poset c ℓ₁ ℓ₂} (D : DCPO P c ℓ₁ ℓ₂) where
+module _ {c ℓ₁ ℓ₂} {P : Poset c ℓ₁ ℓ₂} (D : DCPO c ℓ₁ ℓ₂) where
   private
     module D = DCPO D
 
@@ -134,7 +136,7 @@ module _ {c ℓ₁ ℓ₂} {P : Poset c ℓ₁ ℓ₂} (D : DCPO P c ℓ₁ ℓ�
 module Scott
     {c ℓ₁ ℓ₂}
     {P : Poset c ℓ₁ ℓ₂}
-    {D E : DCPO P c ℓ₁ ℓ₂}
+    {D E : DCPO c ℓ₁ ℓ₂}
     (let module D = DCPO D)
     (let module E = DCPO E)
     (f : D.Carrier → E.Carrier)
@@ -159,7 +161,7 @@ module Scott
         (λ i → IsOrderHomomorphism.mono mono (D.⋁-≤ i))
         )
 
-module _ {c ℓ₁ ℓ₂} {P : Poset c ℓ₁ ℓ₂} {D E : DCPO P c ℓ₁ ℓ₂} where
+module _ {c ℓ₁ ℓ₂} {P : Poset c ℓ₁ ℓ₂} {D E : DCPO c ℓ₁ ℓ₂} where
   private
     module D = DCPO D
     module E = DCPO E
@@ -169,8 +171,7 @@ module _ {c ℓ₁ ℓ₂} {P : Poset c ℓ₁ ℓ₂} {D E : DCPO P c ℓ₁ �
     → IsLub E.poset (f ∘ s) (f (D.⋁ s dir)))
     → IsScottContinuous {P = D.poset} {Q = E.poset} f
   to-scott f mono pres-⋁ = record
-    { PreserveLub = λ dir lub x → is-lub-cong {D = E} (f (D.⋁ _ dir)) (f lub)
-        (IsOrderHomomorphism.cong mono (uniqueLub {D = D} (D.⋁ _ dir) lub (D.⋁-isLub _ dir) x))
+    { PreserveLub = λ dir lub x → is-lub-cong {P = E.poset} {D = E} (f (D.⋁ _ dir)) (f lub)
+        (IsOrderHomomorphism.cong mono (uniqueLub {P = E.poset} {D = D} (D.⋁ _ dir) lub (D.⋁-isLub _ dir) x))
         (pres-⋁ _ dir)
     ; PreserveEquality = IsOrderHomomorphism.cong mono }
-
