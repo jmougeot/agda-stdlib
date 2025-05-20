@@ -1,7 +1,7 @@
 ------------------------------------------------------------------------
 -- The Agda standard library
 --
--- Defintions for domain theory
+-- Properties satisfied by directed complete partial orders (DCPOs)
 ------------------------------------------------------------------------
 
 {-# OPTIONS --cubical-compatible --safe #-}
@@ -14,7 +14,6 @@ open import Function using (_∘_; id)
 open import Data.Product using (_,_)
 open import Data.Bool using (Bool; true; false; if_then_else_)
 open import Relation.Binary.Domain.Bundles using (DCPO)
-open import Relation.Binary.Domain.Definitions using (IsMonotone)
 open import Relation.Binary.Domain.Structures
   using (IsDirectedFamily; IsDCPO; IsLub; IsScottContinuous)
 open import Relation.Binary.Morphism.Structures using (IsOrderHomomorphism)
@@ -53,7 +52,7 @@ module _ {c ℓ₁ ℓ₂ : Level} {P : Poset c ℓ₁ ℓ₂} {Q : Poset c ℓ�
   dcpo+scott→monotone : (P-dcpo : IsDCPO P)
     → (f : P.Carrier → Q.Carrier)
     → (scott : IsScottContinuous f)
-    → IsMonotone P Q f
+    → IsOrderHomomorphism (Poset._≈_ P) (Poset._≈_ Q) (Poset._≤_ P) (Poset._≤_ Q) f
   dcpo+scott→monotone P-dcpo f scott = record
     { cong = λ {x} {y} x≈y → IsScottContinuous.PreserveEquality scott x≈y
     ; mono = λ {x} {y} x≤y → mono-proof x y x≤y
@@ -86,7 +85,7 @@ module _ {c ℓ₁ ℓ₂ : Level} {P : Poset c ℓ₁ ℓ₂} {Q : Poset c ℓ�
 
   monotone∘directed : ∀ {Ix : Set c} {s : Ix → P.Carrier}
     → (f : P.Carrier → Q.Carrier)
-    → IsMonotone P Q f
+    → IsOrderHomomorphism (Poset._≈_ P) (Poset._≈_ Q) (Poset._≤_ P) (Poset._≤_ Q) f
     → IsDirectedFamily P s
     → IsDirectedFamily Q (f ∘ s)
   monotone∘directed f ismonotone dir = record
@@ -106,9 +105,9 @@ module _ where
   scott-∘ : ∀ {c ℓ₁ ℓ₂} {P Q R : Poset c ℓ₁ ℓ₂}
     → (f : Poset.Carrier R → Poset.Carrier Q) (g : Poset.Carrier P → Poset.Carrier R)
     → IsScottContinuous {P = R} {Q = Q} f → IsScottContinuous {P = P} {Q = R} g
-    → IsMonotone R Q f → IsMonotone P R g
+    → IsOrderHomomorphism (Poset._≈_ P) (Poset._≈_ R) (Poset._≤_ P) (Poset._≤_ R) g
     → IsScottContinuous {P = P} {Q = Q} (f ∘ g)
-  scott-∘ f g scottf scottg monof monog = record
+  scott-∘ f g scottf scottg monog = record
     { PreserveLub = λ dir lub z → f.PreserveLub
         (monotone∘directed g monog dir)
         (g lub)
@@ -134,14 +133,16 @@ module _ {c ℓ₁ ℓ₂} {P : Poset c ℓ₁ ℓ₂} (D : DCPO c ℓ₁ ℓ₂
     D.⋁-least (D.⋁ s' fam') λ i → D.trans (p i) (D.⋁-≤ i)
 
 module Scott
-    {c ℓ₁ ℓ₂}
-    {P : Poset c ℓ₁ ℓ₂}
-    {D E : DCPO c ℓ₁ ℓ₂}
-    (let module D = DCPO D)
-    (let module E = DCPO E)
-    (f : D.Carrier → E.Carrier)
-    (isScott : IsScottContinuous {P = D.poset} {Q = E.poset} f)
-    (mono : IsMonotone D.poset E.poset f) where
+  {c ℓ₁ ℓ₂}
+  {P : Poset c ℓ₁ ℓ₂}
+  {D E : DCPO c ℓ₁ ℓ₂}
+  (let module D = DCPO D)
+  (let module E = DCPO E)
+  (f : D.Carrier → E.Carrier)
+  (isScott : IsScottContinuous {P = D.poset} {Q = E.poset} f)
+  (mono : IsOrderHomomorphism (Poset._≈_ D.poset) (Poset._≈_ E.poset)
+                             (Poset._≤_ D.poset) (Poset._≤_ E.poset) f)
+  where
 
     open DCPO D
     open DCPO E
@@ -166,7 +167,9 @@ module _ {c ℓ₁ ℓ₂} {P : Poset c ℓ₁ ℓ₂} {D E : DCPO c ℓ₁ ℓ�
     module D = DCPO D
     module E = DCPO E
 
-  to-scott : (f : D.Carrier → E.Carrier) → IsMonotone D.poset E.poset f
+  to-scott : (f : D.Carrier → E.Carrier)
+    → IsOrderHomomorphism (Poset._≈_ D.poset) (Poset._≈_ E.poset)
+    (Poset._≤_ D.poset) (Poset._≤_ E.poset) f
     → (∀ {Ix} (s : Ix → D.Carrier) (dir : IsDirectedFamily D.poset s)
     → IsLub E.poset (f ∘ s) (f (D.⋁ s dir)))
     → IsScottContinuous {P = D.poset} {Q = E.poset} f

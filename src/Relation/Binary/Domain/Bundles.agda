@@ -34,26 +34,20 @@ record DCPO (c ℓ₁ ℓ₂ : Level) : Set (suc (c ⊔ ℓ₁ ⊔ ℓ₂)) wher
 -- Scott-continuous functions
 ------------------------------------------------------------------------
 
-module _ {c ℓ₁ ℓ₂ : Level} (P : Poset c ℓ₁ ℓ₂) (Q : Poset c ℓ₁ ℓ₂) where
-  private
-    module P = Poset P
-    module Q = Poset Q
-
-  record ScottContinuous : Set (suc (c ⊔ ℓ₁ ⊔ ℓ₂)) where
-    field
-      f             : P.Carrier → Q.Carrier
-      Scottfunction : IsScottContinuous {P = P} {Q = Q} f
+record ScottContinuous {c ℓ₁ ℓ₂ : Level} {P : Poset c ℓ₁ ℓ₂} {Q : Poset c ℓ₁ ℓ₂} :
+  Set (suc (c ⊔ ℓ₁ ⊔ ℓ₂)) where
+  field
+    f             : Poset.Carrier P → Poset.Carrier Q
+    Scottfunction : IsScottContinuous {P = P} {Q = Q} f
 
 ------------------------------------------------------------------------
 -- Lubs
 ------------------------------------------------------------------------
 
-module _ {c ℓ₁ ℓ₂ : Level} (P : Poset c ℓ₁ ℓ₂) where
-  open Poset P
-
-  record Lub {Ix : Set c} (s : Ix → Carrier) : Set (c ⊔ ℓ₁ ⊔ ℓ₂) where
-    constructor mkLub
-    field
-      lub           : Carrier
-      is-upperbound : ∀ i → s i ≤ lub
-      is-least      : ∀ y → (∀ i → s i ≤ y) → lub ≤ y
+record Lub {c ℓ₁ ℓ₂ : Level} {P : Poset c ℓ₁ ℓ₂} {Ix : Set c} (s : Ix → Poset.Carrier P) : Set (c ⊔ ℓ₁ ⊔ ℓ₂) where
+  private
+    module P = Poset P
+  field
+    lub           : P.Carrier
+    is-upperbound : ∀ i → P._≤_ (s i) lub
+    is-least      : ∀ y → (∀ i → P._≤_ (s i) y) → P._≤_ lub y

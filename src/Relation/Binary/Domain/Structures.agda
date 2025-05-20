@@ -14,6 +14,7 @@ open import Function using (_∘_)
 open import Level using (Level; _⊔_; suc)
 open import Relation.Binary.Bundles using (Poset)
 open import Relation.Binary.Domain.Definitions
+open import Relation.Binary.Morphism.Structures using (IsOrderHomomorphism)
 
 private variable
   o ℓ e o' ℓ' e' ℓ₂ : Level
