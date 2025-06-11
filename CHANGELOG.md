@@ -31,6 +31,11 @@ Minor improvements
 * Moved the concept `Irrelevant` of irrelevance (h-proposition) from `Relation.Nullary`
   to its own dedicated module `Relation.Nullary.Irrelevant`.
 
+Additions to existing modules
+----------------------------
+
+* Added `padRight` to `Data.List.Base`.
+
 Deprecated modules
 ------------------
 

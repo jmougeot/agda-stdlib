@@ -16,7 +16,7 @@ open import Data.Bool.Base as Bool
   using (Bool; false; true; not; _∧_; _∨_; if_then_else_)
 open import Data.Fin.Base using (Fin; zero; suc)
 open import Data.Maybe.Base as Maybe using (Maybe; nothing; just; maybe′)
-open import Data.Nat.Base as ℕ using (ℕ; zero; suc)
+open import Data.Nat.Base as ℕ using (ℕ; zero; suc; _≤_; z≤n; s≤s)
 open import Data.Product.Base as Product using (_×_; _,_; map₁; map₂′)
 open import Data.Sum.Base as Sum using (_⊎_; inj₁; inj₂)
 open import Data.These.Base as These using (These; this; that; these)
@@ -227,6 +227,13 @@ unfold : ∀ (P : ℕ → Set b)
          ∀ {n} → P n → List A
 unfold P f {n = zero}  s = []
 unfold P f {n = suc n} s = maybe′ (λ (x , s′) → x ∷ unfold P f s′) [] (f s)
+
+------------------------------------------------------------------------
+--Operations involving ≤
+
+padRight : ∀ {n} (xs : List A) → length xs ≤ n → A → List A
+padRight {n = n}  [] z≤n a = replicate n a
+padRight {n = n} (x ∷ xs) (s≤s le)  a = x ∷ padRight xs le a
 
 ------------------------------------------------------------------------
 -- Operations for reversing lists
