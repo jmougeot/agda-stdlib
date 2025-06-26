@@ -294,6 +294,15 @@ Additions to existing modules
     LeftInverse (I ×ₛ A) (J ×ₛ B)
   ```
 
+* In `Data.Maybe.Properties` 
+  ```agda 
+  to : Maybe A → A ⊎ ⊤
+
+  from : A ⊎ ⊤ → Maybe A
+
+  maybe↔sum : {A : Set a} → Inverse (setoid (Maybe A)) (setoid (A ⊎ ⊤))
+  ```
+
 * In `Data.Vec.Properties`:
   ```agda
   toList-injective : ∀ {m n} → .(m=n : m ≡ n) → (xs : Vec A m) (ys : Vec A n) →
