@@ -14,9 +14,12 @@ import Algebra.Definitions as Definitions
   using (Associative; LeftIdentity; RightIdentity; Identity; Idempotent)
 open import Data.Maybe.Base
   using (Maybe; just; nothing; map; _<∣>_; maybe; maybe′)
+open import Data.Unit.Base using (⊤; tt)
 open import Data.Maybe.Relation.Unary.All using (All; just; nothing)
 open import Data.Product.Base using (_,_)
+open import Data.Sum.Base using (_⊎_; inj₁; inj₂)
 open import Function.Base using (_∋_; id; _∘_; _∘′_)
+open import Function.Bundles using (Inverse)
 open import Function.Definitions using (Injective)
 open import Level using (Level)
 open import Relation.Binary.PropositionalEquality.Core
@@ -25,6 +28,7 @@ open import Relation.Binary.PropositionalEquality.Properties
   using (isEquivalence)
 open import Relation.Binary.Definitions using (DecidableEquality)
 open import Relation.Nullary.Decidable using (yes; no; map′)
+open import Relation.Binary.PropositionalEquality using (setoid)
 
 private
   variable
@@ -32,6 +36,34 @@ private
     A : Set a
     B : Set b
     C : Set c
+
+------------------------------------------------------------------------
+-- Maybe and Sum
+
+to : Maybe A → A ⊎ ⊤
+to (just x) = inj₁ x
+to nothing  = inj₂ tt
+
+from : A ⊎ ⊤ → Maybe A
+from (inj₁ x) = just x
+from (inj₂ tt) = nothing
+
+maybe↔sum : {A : Set a} → Inverse (setoid (Maybe A)) (setoid (A ⊎ ⊤))
+maybe↔sum {A = A} = record
+  { to        = to
+  ; from      = from
+  ; to-cong   = λ { refl → refl }
+  ; from-cong = λ { refl → refl }
+  ; inverse   = inv-left , inv-right
+  }
+  where
+    inv-left : {x : A ⊎ ⊤} {y : Maybe A} → y ≡ from x → to y ≡ x
+    inv-left {inj₁ a} refl = refl
+    inv-left {inj₂ tt} refl = refl
+
+    inv-right : {x : Maybe A} {y : A ⊎ ⊤} → y ≡ to x → from y ≡ x
+    inv-right {just a} refl = refl
+    inv-right {nothing} refl = refl
 
 ------------------------------------------------------------------------
 -- Equality
